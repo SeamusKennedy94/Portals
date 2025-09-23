@@ -1,22 +1,28 @@
 ﻿using AxMSTSCLib;
 using MSTSCLib;
+using Portals.Views;
 using System;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms.Integration;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace Portals
 {
     public partial class MainWindow : Window
     {
-        private TabItem _lastSelectedTab = null;
+        //private TabItem _lastSelectedTab = null;
+        private bool _isDarkMode = false;
+
+        private readonly HomePage _homePage = new HomePage();
+        private readonly WorkspacePage _workspacePage = new WorkspacePage();
 
         public MainWindow()
         {
             InitializeComponent();
+            AddNewWorkspaceTab("New Connection");
         }
 
         #region Title Bar
@@ -45,68 +51,88 @@ namespace Portals
         }
         #endregion
 
-        private void NavButton_NewConnection(object sender, RoutedEventArgs e)
+        private void WorkspaceTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            Console.WriteLine("New connection button clicked");
-
-            var dialog = new ConnectionDialog { Owner = this };
-            if (dialog.ShowDialog() == true)
+            if (WorkspaceTabs.SelectedItem == AddTabItem)
             {
-
-                var newTab = CreateRdpTab(dialog.Server, dialog.Username);
-                var plusTab = MainTabs.Items.OfType<TabItem>().FirstOrDefault(t => t.Header?.ToString() == "+");
-
-                if (plusTab != null)
-                {
-                    int plusIndex = MainTabs.Items.IndexOf(plusTab);
-                    MainTabs.Items.Insert(plusIndex, newTab);
-                }
-                else
-                {
-                    MainTabs.Items.Add(newTab);
-                }
-
-                MainTabs.SelectedItem = newTab;
+                AddNewWorkspaceTab($"New Connection");
             }
-            else
+            else if (WorkspaceTabs.SelectedItem is TabItem tab && tab.Tag is UserControl content)
             {
-                Console.WriteLine("Dialog cancelled");
-                if (_lastSelectedTab != null)
-                    MainTabs.SelectedItem = _lastSelectedTab;
-                else
-                    MainTabs.SelectedIndex = 0;
+                MainContent.Content = content;
             }
         }
 
-
-        private void MainTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void AddNewWorkspaceTab(string header)
         {
-            foreach (TabItem removed in e.RemovedItems.OfType<TabItem>())
-            {
-                if (removed.Content is WindowsFormsHost host &&
-                    host.Child is AxMsRdpClient9NotSafeForScripting client)
-                {
-                    if (client.Connected == 1)
-                    {
-                        //Console.WriteLine("Disconnecting hidden tab...");
-                        //client.Disconnect();
-                    }
-                }
-            }
+            var homePage = new Portals.Views.HomePage(); // default page
 
-            foreach (TabItem added in e.AddedItems.OfType<TabItem>())
+            var tab = new TabItem
             {
-                if (added.Content is WindowsFormsHost host &&
-                    host.Child is AxMsRdpClient9NotSafeForScripting client)
+                Tag = homePage // store page
+            };
+
+            // Create header with text + close button
+            var headerPanel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0) };
+
+            var title = new TextBlock
+            {
+                Text = header,
+                Margin = new Thickness(0, 0, 8, 0),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            var closeButton = new Button
+            {
+                Content = "✕",
+                Width = 18,
+                Height = 18,
+                Padding = new Thickness(0),
+                Margin = new Thickness(0, 0, 0, 0),
+                Background = Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Cursor = Cursors.Hand
+            };
+            closeButton.Click += (s, e) => CloseTab(tab);
+
+            headerPanel.Children.Add(title);
+            headerPanel.Children.Add(closeButton);
+
+            tab.Header = headerPanel;
+            tab.Content = null; // real content shown in MainContent
+            WorkspaceTabs.Items.Insert(WorkspaceTabs.Items.Count - 1, tab);
+            WorkspaceTabs.SelectedItem = tab;
+            MainContent.Content = homePage;
+        }
+
+        private void CloseTab(TabItem tab)
+        {
+            // If you’re closing the active tab, switch content
+            bool isActive = (WorkspaceTabs.SelectedItem == tab);
+
+            WorkspaceTabs.Items.Remove(tab);
+
+            if (isActive)
+            {
+                if (WorkspaceTabs.Items.Count > 1) // at least one tab + "+"
                 {
-                    if (client.Connected != 1)
+                    WorkspaceTabs.SelectedIndex = 0;
+                    if (WorkspaceTabs.SelectedItem is TabItem selected && selected.Tag is UserControl content)
                     {
-                        //Console.WriteLine("Reconnecting visible tab...");
-                        try { client.Connect(); }
-                        catch (Exception ex) { Console.WriteLine("Reconnect failed: " + ex.Message); }
+                        MainContent.Content = content;
                     }
                 }
+                else
+                {
+                    MainContent.Content = null; // no open tabs
+                }
             }
+        }
+
+        private void OnThemeToggle(object sender, RoutedEventArgs e)
+        {
+            _isDarkMode = !_isDarkMode;
+            ThemeManager.ApplyTheme(_isDarkMode ? "Dark" : "Light");
         }
 
         private TabItem CreateRdpTab(string server, string username, string password = null, string domain = "OBC")

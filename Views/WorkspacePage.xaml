@@ -1,0 +1,50 @@
+﻿<UserControl x:Class="Portals.Views.WorkspacePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource SurfaceBrush}">
+
+    <Grid>
+        <!-- Tab Control for connections -->
+        <TabControl x:Name="WorkspaceTabs"
+                    Background="{DynamicResource SurfaceBrush}"
+                    BorderThickness="0"
+                    Padding="10"
+                    VirtualizingStackPanel.IsVirtualizing="False"
+                    VirtualizingStackPanel.VirtualizationMode="Standard"
+                    SelectionChanged="WorkspaceTabs_SelectionChanged">
+
+            <!-- Example Tab -->
+            <TabItem Header="Connection 1">
+                <Grid Background="{DynamicResource SecondaryBrush}">
+                    <TextBlock Text="Remote Desktop Session Preview"
+                               Foreground="White"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"
+                               FontSize="18"/>
+                </Grid>
+            </TabItem>
+
+            <!-- New Connection Tab -->
+            <TabItem Header="+"
+                     x:Name="NewConnectionTab"
+                     IsSelected="False">
+                <Grid Background="{DynamicResource SecondaryBrush}">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <TextBlock Text="Start a new connection" 
+                                   Foreground="White"
+                                   FontSize="16"
+                                   Margin="0,0,0,10"/>
+                        <Button Content="➕ New Connection"
+                                Width="160"
+                                Height="40"
+                                Background="{DynamicResource AccentBrush}"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Cursor="Hand"
+                                Click="NewConnection_Click"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</UserControl>
