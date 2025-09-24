@@ -1,17 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+using System.Collections.ObjectModel;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using System.IO;
+using Newtonsoft.Json;
+
 
 namespace Portals.Views
 {
@@ -20,33 +13,48 @@ namespace Portals.Views
     /// </summary>
     public partial class HomePage : UserControl
     {
+        public ObservableCollection<Connection> RecentConnections { get; set; } = new ObservableCollection<Connection>();
+
+        public ObservableCollection<Connection> FavoriteConnections { get; set; } = new ObservableCollection<Connection>();
+
+        private readonly string recentPath = "recent.json";
+        private readonly string favoritePath = "favorite.json";
+
         public HomePage()
         {
             InitializeComponent();
 
-            RecentConnections.ItemsSource = new[]
-{
-            new { Name = "Dev Server", Address = "192.168.1.100" },
-            new { Name = "QA Server", Address = "10.0.0.15" },
-                        new { Name = "Dev Server", Address = "192.168.1.100" },
-            new { Name = "QA Server", Address = "10.0.0.15" },
-                        new { Name = "Dev Server", Address = "192.168.1.100" },
-            new { Name = "QA Server", Address = "10.0.0.15" },
-                        new { Name = "Dev Server", Address = "192.168.1.100" },
-            new { Name = "QA Server", Address = "10.0.0.15" },
-                        new { Name = "Dev Server", Address = "192.168.1.100" },
-            new { Name = "QA Server", Address = "10.0.0.15" },
-                        new { Name = "Dev Server", Address = "192.168.1.100" },
-            new { Name = "QA Server", Address = "10.0.0.15" }
-        };
+            RecentConnectionsList.ItemsSource = RecentConnections;
+            FavoriteConnectionsList.ItemsSource = FavoriteConnections;
 
-            FavoriteConnections.ItemsSource = new[]
+            // Load Persistant data here
+            LoadConnections();
+        }
+
+        private void AddConnection(Connection connection)
+        {
+            this.RecentConnections.Add(connection);
+        }
+
+        private void SaveConnections()
+        {
+            File.WriteAllText(recentPath, JsonConvert.SerializeObject(RecentConnections));
+            File.WriteAllText(favoritePath, JsonConvert.SerializeObject(FavoriteConnections));
+        }
+
+        private void LoadConnections()
+        {
+            if (File.Exists(recentPath))
             {
-            new { Name = "Production", Address = "203.0.113.10" },
-            new { Name = "Database", Address = "203.0.113.20" },
-                        new { Name = "Production", Address = "203.0.113.10" },
-            new { Name = "Database", Address = "203.0.113.20" }
-        };
+                var recent = JsonConvert.DeserializeObject<ObservableCollection<Connection>>(File.ReadAllText(recentPath));
+                if (recent != null) RecentConnections = recent;
+            }
+
+            if (File.Exists(favoritePath))
+            {
+                var favs = JsonConvert.DeserializeObject<ObservableCollection<Connection>>(File.ReadAllText(favoritePath));
+                if (favs != null) FavoriteConnections = favs;
+            }
         }
     }
 }
