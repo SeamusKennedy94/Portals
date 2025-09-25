@@ -38,7 +38,8 @@
                                 Background="{DynamicResource AccentBrush}"
                                 Foreground="White"
                                 BorderThickness="0"
-                                Cursor="Hand"/>
+                                Cursor="Hand"
+                                Click="OpenConnectionDialog"/>
                     </StackPanel>
                 </Grid>
             </Border>

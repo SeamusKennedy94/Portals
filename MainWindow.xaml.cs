@@ -16,8 +16,13 @@ namespace Portals
         //private TabItem _lastSelectedTab = null;
         private bool _isDarkMode = false;
 
+        public TabControl WorkspaceTabsControl => WorkspaceTabs;
+        public ContentPresenter ContentPresenter => MainContent;
+
         private readonly HomePage _homePage = new HomePage();
         private readonly WorkspacePage _workspacePage = new WorkspacePage();
+
+
 
         public MainWindow()
         {
@@ -133,83 +138,6 @@ namespace Portals
         {
             _isDarkMode = !_isDarkMode;
             ThemeManager.ApplyTheme(_isDarkMode ? "Dark" : "Light");
-        }
-
-        private TabItem CreateRdpTab(string server, string username, string password = null, string domain = "OBC")
-        {
-            var rdpClient = new AxMsRdpClient9NotSafeForScripting();
-            ((System.ComponentModel.ISupportInitialize)(rdpClient)).BeginInit();
-            rdpClient.Dock = System.Windows.Forms.DockStyle.Fill;
-
-            var host = new WindowsFormsHost
-            {
-                Child = rdpClient,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Stretch
-            };
-            ((System.ComponentModel.ISupportInitialize)(rdpClient)).EndInit();
-
-            // Event hooks
-            rdpClient.OnConnecting += (s, e) => Console.WriteLine("Event: Connecting...");
-            rdpClient.OnConnected += (s, e) => Console.WriteLine("Event: Connected!");
-            rdpClient.OnLoginComplete += (s, e) => Console.WriteLine("Event: Login complete");
-            rdpClient.OnDisconnected += (s, e) => Console.WriteLine("Event: Disconnected, reason=" + e.discReason);
-            rdpClient.OnFatalError += (s, e) => Console.WriteLine("Event: Fatal error=" + e.errorCode);
-            rdpClient.OnWarning += (s, e) => Console.WriteLine("Event: Warning=" + e.warningCode);
-
-            // Configure — but DO NOT call Connect yet
-            rdpClient.Server = server;
-            rdpClient.UserName = username;
-            if (!string.IsNullOrEmpty(domain))
-                rdpClient.Domain = domain;
-
-            rdpClient.AdvancedSettings8.EnableCredSspSupport = true;
-            rdpClient.ColorDepth = 32;
-            rdpClient.DesktopWidth = (int)SystemParameters.PrimaryScreenWidth;
-            rdpClient.DesktopHeight = (int)SystemParameters.PrimaryScreenHeight;
-
-            //if (!string.IsNullOrEmpty(password))
-            //{
-            //    var secured = (IMsTscNonScriptable)rdpClient.GetOcx();
-            //    secured.ClearTextPassword = password;
-            //}
-
-            // Connect only after the host is visible
-            host.Loaded += (s, e) =>
-            {
-
-                rdpClient.AdvancedSettings8.SmartSizing = true;
-
-                if (rdpClient.Connected == 1)
-                {
-                    rdpClient.UpdateSessionDisplaySettings(
-                        (uint)host.ActualWidth,
-                        (uint)host.ActualHeight,
-                        (uint)host.ActualWidth,
-                        (uint)host.ActualHeight,
-                        0, 0, 0);
-                }
-
-            try
-                {
-                    if (rdpClient.Connected != 1)
-                    {
-                        rdpClient.Connect();
-                    }
-                }
-                catch (COMException ex)
-                {
-                    Console.WriteLine($"COMException: 0x{ex.HResult:X} - {ex.Message}");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Connect failed: " + ex.Message);
-                }
-            };
-
-            // Wrap host in a tab item
-            var tab = new TabItem { Header = $"{username}@{server}", Content = host };
-            return tab;
         }
 
     }
